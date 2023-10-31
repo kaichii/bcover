@@ -1,8 +1,4 @@
 import { parseMediaType } from "https://deno.land/std@0.175.0/media_types/parse_media_type.ts";
-import {
-  ImageMagick,
-  IMagickImage,
-} from "https://deno.land/x/imagemagick_deno@0.0.14/mod.ts";
 
 async function getRemoteImage(image: string) {
   const sourceRes = await fetch(image, {
@@ -21,14 +17,10 @@ async function getRemoteImage(image: string) {
     return "URL is not image type.";
   }
 
+  const buffer = await sourceRes.arrayBuffer();
+
   return {
-    // deno-lint-ignore no-async-promise-executor
-    image: await new Promise<Uint8Array>((async (resolve) => {
-      ImageMagick.read(
-        new Uint8Array(await sourceRes.arrayBuffer()),
-        (image: IMagickImage) => image.write((d: Uint8Array) => resolve(d)),
-      );
-    })),
+    buffer,
     mediaType,
   };
 }
@@ -58,7 +50,7 @@ async function handler(req: Request): Promise<Response> {
     return new Response(image, { status: 400 });
   }
 
-  return new Response(image.image, {
+  return new Response(image.buffer, {
     headers: {
       "Content-Type": image.mediaType,
     },
